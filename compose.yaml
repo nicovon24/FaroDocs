@@ -35,6 +35,9 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://farodocs:${POSTGRES_PASSWORD:-local-development-only}@db:5432/farodocs
       CELERY_BROKER_URL: redis://broker:6379/0
+      FARODOCS_STORAGE_ROOT: /app/private-files
+    volumes:
+      - original_files:/app/private-files
     ports:
       - "127.0.0.1:8000:8000"
     depends_on:
@@ -55,6 +58,9 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://farodocs:${POSTGRES_PASSWORD:-local-development-only}@db:5432/farodocs
       CELERY_BROKER_URL: redis://broker:6379/0
+      FARODOCS_STORAGE_ROOT: /app/private-files
+    volumes:
+      - original_files:/app/private-files
     depends_on:
       db:
         condition: service_healthy
@@ -82,3 +88,4 @@ services:
 volumes:
   postgres_data:
   broker_data:
+  original_files:

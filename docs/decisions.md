@@ -32,5 +32,5 @@ Only the user can confirm product preferences. A proposal is not a confirmed dec
 
 - Choose exact embedding and generation models and initial supported providers only after recording language coverage, data handling terms, price, and a small retrieval baseline. Do not claim support for every provider with a token.
 - Choose the exact secret-store mechanism for local development and any later hosting environment; keep its encryption key separate from PostgreSQL and document rotation, backup, and deletion behavior before saving real user credentials.
-- Choose PDF extraction and OCR libraries after a license check and a text-order/location spike.
+- Choose an OCR library and test scanned PDFs in the later OCR stage. The first text-bearing parser choice and its measured locator limits are recorded in `docs/extraction-spike.md`.
 - Set actual file-size, page-count, and request-rate limits from local resource tests rather than promising arbitrary numbers.
