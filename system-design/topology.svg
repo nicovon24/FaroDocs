@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720" role="img" aria-labelledby="topology-title topology-desc" id="topology-root">
+<title id="topology-title">One product, clear runtime owners</title>
+<desc id="topology-desc">Proposed topology: Next.js communicates with FastAPI. FastAPI stores metadata in PostgreSQL, queues work through a broker, and the worker writes private files and derived passages. A model adapter is optional.</desc>
+<defs>
+<marker id="topology-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M 0 0 L 10 4 L 0 8" fill="none" stroke="#526176" stroke-width="1.4"/></marker>
+<marker id="topology-arrow-accent" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M 0 0 L 10 4 L 0 8" fill="none" stroke="#A84128" stroke-width="1.4"/></marker>
+</defs>
+<rect x="0" y="0" width="1280" height="720" fill="#F7F3EA"/>
+<text x="64" y="51" fill="#A84128" font-family="ui-monospace, Consolas, monospace" font-size="12" letter-spacing="2">FARODOCS / 01 / TOPOLOGY</text>
+<text x="64" y="97" fill="#17263D" font-family="Georgia, serif" font-size="38">One product, clear runtime owners</text>
+<text x="64" y="128" fill="#526176" font-family="system-ui, sans-serif" font-size="15">Next.js serves the experience; FastAPI owns document decisions; Python jobs process files.</text>
+<line x1="64" y1="151" x2="1216" y2="151" stroke="#C9D0D5"/>
+<path d="M 274 266 L 374 266" fill="none" stroke="#A84128" stroke-width="2" marker-end="url(#topology-arrow-accent)"/>
+<path d="M 479 314 L 479 430" fill="none" stroke="#526176" stroke-width="2" marker-end="url(#topology-arrow)"/>
+<path d="M 584 266 L 634 266 L 634 478 L 684 478" fill="none" stroke="#526176" stroke-width="2" marker-end="url(#topology-arrow)"/>
+<path d="M 789 430 L 789 314" fill="none" stroke="#526176" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#topology-arrow)"/>
+<path d="M 894 266 L 994 266" fill="none" stroke="#526176" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#topology-arrow)"/>
+<path d="M 894 286 L 944 286 L 944 478 L 994 478" fill="none" stroke="#526176" stroke-width="2" marker-end="url(#topology-arrow)"/>
+<path d="M 894 314 L 920 314 L 920 560 L 479 560 L 479 526" fill="none" stroke="#526176" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#topology-arrow)"/>
+<path d="M 479 218 L 479 184 L 1099 184 L 1099 218" fill="none" stroke="#526176" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#topology-arrow)"/>
+<g data-node="web"><rect x="64" y="218" width="210" height="96" rx="8" fill="#F3DFD6" stroke="#A84128" stroke-width="1.5"/><text x="82" y="242" fill="#526176" font-family="ui-monospace, Consolas, monospace" font-size="10" letter-spacing="1.5">PROCESS</text><text x="82" y="271" fill="#17263D" font-family="system-ui, sans-serif" font-size="18" font-weight="650">Next.js</text><text x="82" y="293" fill="#526176" font-family="system-ui, sans-serif" font-size="12">UI + short actions</text></g>
+<g data-node="api"><rect x="374" y="218" width="210" height="96" rx="8" fill="#FFFEFB" stroke="#C9D0D5" stroke-width="1.5"/><text x="392" y="242" fill="#526176" font-family="ui-monospace, Consolas, monospace" font-size="10" letter-spacing="1.5">STEP</text><text x="392" y="271" fill="#17263D" font-family="system-ui, sans-serif" font-size="18" font-weight="650">FastAPI</text><text x="392" y="293" fill="#526176" font-family="system-ui, sans-serif" font-size="12">auth + domain API</text></g>
+<g data-node="worker"><rect x="684" y="218" width="210" height="96" rx="8" fill="#FFFEFB" stroke="#C9D0D5" stroke-width="1.5"/><text x="702" y="242" fill="#526176" font-family="ui-monospace, Consolas, monospace" font-size="10" letter-spacing="1.5">STEP</text><text x="702" y="271" fill="#17263D" font-family="system-ui, sans-serif" font-size="18" font-weight="650">Python worker</text><text x="702" y="293" fill="#526176" font-family="system-ui, sans-serif" font-size="12">extract + embed</text></g>
+<g data-node="model"><rect x="994" y="218" width="210" height="96" rx="8" fill="#FFFEFB" stroke="#C9D0D5" stroke-width="1.5"/><text x="1012" y="242" fill="#526176" font-family="ui-monospace, Consolas, monospace" font-size="10" letter-spacing="1.5">STEP</text><text x="1012" y="271" fill="#17263D" font-family="system-ui, sans-serif" font-size="18" font-weight="650">Model adapter</text><text x="1012" y="293" fill="#526176" font-family="system-ui, sans-serif" font-size="12">embed + answer</text></g>
+<g data-node="database"><rect x="374" y="430" width="210" height="96" rx="8" fill="#E9EFF1" stroke="#C9D0D5" stroke-width="1.5"/><text x="392" y="454" fill="#526176" font-family="ui-monospace, Consolas, monospace" font-size="10" letter-spacing="1.5">DATA</text><text x="392" y="483" fill="#17263D" font-family="system-ui, sans-serif" font-size="18" font-weight="650">PostgreSQL</text><text x="392" y="505" fill="#526176" font-family="system-ui, sans-serif" font-size="12">metadata + pgvector</text></g>
+<g data-node="broker"><rect x="684" y="430" width="210" height="96" rx="8" fill="#E9EFF1" stroke="#C9D0D5" stroke-width="1.5"/><text x="702" y="454" fill="#526176" font-family="ui-monospace, Consolas, monospace" font-size="10" letter-spacing="1.5">DATA</text><text x="702" y="483" fill="#17263D" font-family="system-ui, sans-serif" font-size="18" font-weight="650">Job broker</text><text x="702" y="505" fill="#526176" font-family="system-ui, sans-serif" font-size="12">durable tasks</text></g>
+<g data-node="files"><rect x="994" y="430" width="210" height="96" rx="8" fill="#E9EFF1" stroke="#C9D0D5" stroke-width="1.5"/><text x="1012" y="454" fill="#526176" font-family="ui-monospace, Consolas, monospace" font-size="10" letter-spacing="1.5">DATA</text><text x="1012" y="483" fill="#17263D" font-family="system-ui, sans-serif" font-size="18" font-weight="650">Private files</text><text x="1012" y="505" fill="#526176" font-family="system-ui, sans-serif" font-size="12">originals + previews</text></g>
+<line x1="64" y1="618" x2="1216" y2="618" stroke="#C9D0D5"/>
+<text x="64" y="651" fill="#526176" font-family="system-ui, sans-serif" font-size="14">Server Actions handle brief UI changes; FastAPI enforces permissions and owns persistent state.</text>
+<text x="1216" y="651" text-anchor="end" fill="#A84128" font-family="ui-monospace, Consolas, monospace" font-size="11" letter-spacing="1.2">PROPOSED SYSTEM</text>
+</svg>
