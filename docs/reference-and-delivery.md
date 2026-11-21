@@ -36,4 +36,4 @@ The local `ai-engineering-projects/AGENTS.md` requests Astra high for substantia
 3. **Permissions/OCR/Drive:** add two-user leak tests, deletion/limit checks, scanned-PDF fixtures, and mocked OAuth. A live OAuth or model smoke check requires explicit credentials and must be labeled separately.
 4. **Demo gate:** audit dependencies and final images, verify clean installation and restart/persistence, run adversarial-document cases, and record the corpus, revisions, image IDs, and residual risks.
 
-No CI workflow or deployment pipeline exists in FaroDocs yet. Do not add automated deployment until the user requests a destination and the public-readiness gates pass.
+The foundation CI workflow checks the implemented web build, Python imports, and Compose syntax. It does not yet test containers, document flows, providers, or permissions. No deployment pipeline exists; a destination and the public-readiness gates are still required before adding one.

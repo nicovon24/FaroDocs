@@ -33,6 +33,8 @@ The placeholder page is at <http://127.0.0.1:3000>. Stop containers with `docker
 
 Web checks run from `web/` with `npm ci`, `npm run lint`, `npm run typecheck`, and `npm run build`. The Python package can be installed with `py -3 -m pip install -e backend`. API and web health endpoints returned `200` when the processes were run directly on 2026-11-21. Upload, fixtures, database migrations, and behavior tests arrive with the library slice.
 
+The current [CI workflow](.github/workflows/validate.yaml) checks the web build, Python imports, and Compose syntax on pushes and pull requests. It does not run a full Compose or document flow yet.
+
 ## Working agreements
 
 - Technical documentation and code are written in English. The initial UI language will be Spanish, with English available.
