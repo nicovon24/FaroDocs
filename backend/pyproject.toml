@@ -16,3 +16,6 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 include = ["farodocs*"]
+
+[tool.setuptools.package-data]
+"farodocs.sql" = ["*.sql"]

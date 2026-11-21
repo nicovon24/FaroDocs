@@ -24,4 +24,4 @@ Read `README.md`, `docs/product-plan.md`, and `docs/decisions.md` before impleme
 ## Delivery
 
 - Start CI with checks that correspond to implemented modules; expand it with search, chat, permissions, OCR, and integrations as they land. Keep synthetic and live-provider evidence distinct.
-- Do not create a remote, push, deploy, or describe FaroDocs as ready for public use without a later user request and the required security/privacy verification.
+- The user authorized source pushes to the existing public `nicovon24/FaroDocs` repository. Do not deploy or describe FaroDocs as ready for public use without a later user request and the required security/privacy verification.

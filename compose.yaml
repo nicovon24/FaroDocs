@@ -28,7 +28,7 @@ services:
 
   api:
     build: ./backend
-    command: ["uvicorn", "farodocs.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["sh", "-c", "python -m farodocs.migrate && uvicorn farodocs.main:app --host 0.0.0.0 --port 8000"]
     environment:
       DATABASE_URL: postgresql+psycopg://farodocs:${POSTGRES_PASSWORD:-local-development-only}@db:5432/farodocs
       CELERY_BROKER_URL: redis://broker:6379/0
@@ -55,6 +55,8 @@ services:
       db:
         condition: service_healthy
       broker:
+        condition: service_healthy
+      api:
         condition: service_healthy
 
   web:

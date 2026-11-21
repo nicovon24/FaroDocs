@@ -25,4 +25,4 @@ None.
 
 ## Impact
 
-New local backend, frontend, Compose configuration, database migrations, private storage, generated fixtures, tests, and execution documentation. No remote resources are created. Subsequent stages will add search, chat, permissions, OCR, integrations, and evaluation through separate changes.
+New local backend, frontend, Compose configuration, database migrations, private storage, generated fixtures, tests, and execution documentation. Source increments are pushed to the existing public GitHub repository; no hosted product infrastructure is created. Subsequent stages will add search, chat, permissions, OCR, integrations, and evaluation through separate changes.

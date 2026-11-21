@@ -4,15 +4,15 @@ FaroDocs is an original document intelligence portfolio project in early impleme
 
 The selected architecture is Next.js (React/TypeScript), FastAPI and a Python document worker, PostgreSQL/pgvector, and Docker Compose. See the [system designs](system-design/README.md) for planned flows.
 
-Google sign-in, account-scoped chat history, and saved user-selected AI provider credentials are planned in the [identity and provider credential design](docs/identity-and-provider-keys.md). They are not implemented yet.
+The first library preview targets one local development owner. Google sign-in, account-scoped chat history, and saved user-selected AI provider credentials are planned in the [identity and provider credential design](docs/identity-and-provider-keys.md). They are not implemented yet; the local preview does not provide multi-user isolation.
 
 ## Current status
 
 | Area | Status |
 | --- | --- |
 | Product and architecture plan | Proposed; decisions recorded in `docs/decisions.md` |
-| Application code | Compose skeleton, API and web health endpoints, and a placeholder page only |
-| Compose runtime | Configuration parsed; full startup not yet verified |
+| Application code | Compose skeleton, API and web health endpoints, a placeholder page, and the initial library schema |
+| Compose runtime | Five services started from new volumes; API and web health endpoints verified on localhost |
 | Evaluation results | None |
 | Public deployment | None |
 
@@ -29,11 +29,13 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 Invoke-RestMethod http://127.0.0.1:3000/api/health
 ```
 
-The placeholder page is at <http://127.0.0.1:3000>. Stop containers with `docker compose down`; this retains the local database and broker volumes. Use `docker compose down --volumes` only when intentionally discarding all local data. The current Compose password default is for local development only. The full Compose startup has not yet been verified on this machine because Docker Desktop stopped during image download.
+The placeholder page is at <http://127.0.0.1:3000>. Stop containers with `docker compose down`; this retains the local database and broker volumes. Use `docker compose down --volumes` only when intentionally discarding all local data. The current Compose password default is for local development only. On 2026-11-21, `docker compose up --build -d` succeeded from new volumes, both health endpoints returned `ok`, and `docker compose ps` showed the API, web, database, and broker as healthy with the worker running.
 
 Web checks run from `web/` with `npm ci`, `npm run lint`, `npm run typecheck`, and `npm run build`. The Python package can be installed with `py -3 -m pip install -e backend`. API and web health endpoints returned `200` when the processes were run directly on 2026-11-21. Upload, fixtures, database migrations, and behavior tests arrive with the library slice.
 
-The current [CI workflow](.github/workflows/validate.yaml) checks the web build, Python imports, and Compose syntax on pushes and pull requests. It does not run a full Compose or document flow yet.
+The API applies versioned SQL migrations before starting. They are stored in `backend/farodocs/sql/`; applied filenames are tracked in `schema_migrations`. To rerun pending migrations, use `docker compose exec -T api python -m farodocs.migrate`. The database URL comes from `DATABASE_URL` in Compose. The migration is idempotent; the schema constraint check can be run with `Get-Content -Raw backend/tests/schema_constraints.sql | docker compose exec -T db psql -v ON_ERROR_STOP=1 -U farodocs -d farodocs`.
+
+The current [CI workflow](.github/workflows/validate.yaml) checks the web build, Python imports, database migration and constraints, and Compose syntax on pushes and pull requests. It does not run a full Compose or document flow yet.
 
 ## Working agreements
 

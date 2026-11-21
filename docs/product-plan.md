@@ -90,7 +90,7 @@ Reference documentation: [Next.js Server Actions](https://nextjs.org/docs/app/ge
 | 7. Evaluation | Versioned cases, retrieval/support/abstention/latency/cost reporting, adversarial cases | Published corpus manifest and actual measured results only |
 | 8. Demo preparation | Reproducible seeded tour, architecture narrative, limits and privacy checklist | Clean install and full user flow |
 
-Stages 1-3 may use a single local owner account or fixtures; their history is only a local development preview. Stage 4 links history and provider settings to Google-backed FaroDocs accounts and verifies cross-user isolation before a shared demo. Each stage ends with affected-behavior tests, execution commands, diff review, and a status update. Cross-user authorization and credential storage are hard gates before multi-user use.
+The user chose a single-user local preview first. Stages 1-3 use a development owner fixture; any local history or provider setting in those stages is only a development preview. Stage 4 links history and provider settings to Google-backed FaroDocs accounts and verifies cross-user isolation before a shared demo. Each stage ends with affected-behavior tests, execution commands, diff review, and a status update. Cross-user authorization and credential storage are hard gates before multi-user use.
 
 ## Three differentiators to prioritize
 
@@ -108,6 +108,6 @@ Main risks: misleading PDF reading order or coordinates; OCR errors; stale embed
 
 ## Current evidence
 
-- Implemented: OpenSpec planning structure, technical documents, and a Compose/API/web/worker skeleton with health endpoints and a placeholder page. No document behavior exists yet.
-- Evaluated: Compose syntax, local API/web health endpoints, web build/lint/typecheck, and Python package imports. Full Compose startup stopped during image download; no corpus, user-flow, retrieval, security, or model evaluation has run.
+- Implemented: OpenSpec planning structure, technical documents, a Compose/API/web/worker skeleton with health endpoints and a placeholder page, and the initial library schema. No document behavior exists yet.
+- Evaluated: Compose syntax, a clean five-service Compose startup, local API/web health endpoints, web build/lint/typecheck, Python package imports, a clean database migration, migration idempotency, and selected schema constraints. No corpus, document user flow, retrieval, security, or model evaluation has run.
 - Planned: every product capability and all numerical evaluation targets above.
