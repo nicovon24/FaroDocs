@@ -4,7 +4,7 @@
 
 - [x] 1.1 Create Next.js/React/TypeScript, FastAPI, PostgreSQL/pgvector, broker, and Python worker Compose skeleton; verify a clean `docker compose up --build` exposes API and UI health checks on localhost.
 - [x] 1.2 Define document/version/job/blob/chunk and organization migrations; verify migration from an empty database and the expected constraints.
-- [ ] 1.3 Document exact local setup, environment variables, and reset commands in README; verify them on a clean local volume.
+- [x] 1.3 Document exact local setup, environment variables, and reset commands in README; verify them on a clean local volume.
 
 ## 2. Upload and extraction
 

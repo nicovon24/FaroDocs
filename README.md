@@ -20,7 +20,7 @@ Read the [product plan](docs/product-plan.md), [decision record](docs/decisions.
 
 ## Running locally
 
-The current skeleton has no library, authentication, search, or chat. With Docker Desktop running, use:
+The current skeleton has no library, authentication, search, or chat. Install Docker Desktop with Compose and start its Linux engine. From the repository root, use:
 
 ```powershell
 docker compose up --build -d
@@ -30,6 +30,17 @@ Invoke-RestMethod http://127.0.0.1:3000/api/health
 ```
 
 The placeholder page is at <http://127.0.0.1:3000>. Stop containers with `docker compose down`; this retains the local database and broker volumes. Use `docker compose down --volumes` only when intentionally discarding all local data. The current Compose password default is for local development only. On 2026-11-21, `docker compose up --build -d` succeeded from new volumes, both health endpoints returned `ok`, and `docker compose ps` showed the API, web, database, and broker as healthy with the worker running.
+
+Compose uses these settings:
+
+| Setting | Source | Current use |
+| --- | --- | --- |
+| `POSTGRES_PASSWORD` | Optional host environment variable; default `local-development-only` | Password for the local database. Set before creating the volume if you want a different password. |
+| `DATABASE_URL` | Built by Compose for API and worker | Internal PostgreSQL connection; do not set it on the host for the Compose path. |
+| `CELERY_BROKER_URL` | Built by Compose for API and worker | Internal Redis connection. |
+| `FARODOCS_API_URL` | Built by Compose for web | Internal API address. |
+
+To restart while retaining data, use `docker compose down` followed by `docker compose up --build -d`. To reset this project's local database and broker completely, use `docker compose down --volumes`, then `docker compose up --build -d`. The reset destroys all FaroDocs data in those volumes. Re-run the two health commands above after either path. Do not use a real provider key or private document in this unfinished local preview.
 
 Web checks run from `web/` with `npm ci`, `npm run lint`, `npm run typecheck`, and `npm run build`. The Python package can be installed with `py -3 -m pip install -e backend`. API and web health endpoints returned `200` when the processes were run directly on 2026-11-21. Upload, fixtures, database migrations, and behavior tests arrive with the library slice.
 
