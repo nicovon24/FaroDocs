@@ -11,7 +11,7 @@ The first library preview targets one local development owner. Google sign-in, a
 | Area | Status |
 | --- | --- |
 | Product and architecture plan | Proposed; decisions recorded in `docs/decisions.md` |
-| Application code | Compose skeleton, API and web health endpoints, a placeholder page, and the initial library schema |
+| Application code | Compose skeleton, API and web health endpoints, an explicit empty library preview, and the initial library schema |
 | Compose runtime | Five services started from new volumes; API and web health endpoints verified on localhost |
 | Evaluation results | None |
 | Public deployment | None |
@@ -20,7 +20,7 @@ Read the [product plan](docs/product-plan.md), [decision record](docs/decisions.
 
 ## Running locally
 
-The current skeleton has no library, authentication, search, or chat. Install Docker Desktop with Compose and start its Linux engine. From the repository root, use:
+The current skeleton has no document upload, authentication, search, or chat. Install Docker Desktop with Compose and start its Linux engine. From the repository root, use:
 
 ```powershell
 docker compose up --build -d
@@ -29,7 +29,17 @@ Invoke-RestMethod http://127.0.0.1:8000/health
 Invoke-RestMethod http://127.0.0.1:3000/api/health
 ```
 
-The placeholder page is at <http://127.0.0.1:3000>. Stop containers with `docker compose down`; this retains the local database and broker volumes. Use `docker compose down --volumes` only when intentionally discarding all local data. The current Compose password default is for local development only. On 2026-11-21, `docker compose up --build -d` succeeded from new volumes, both health endpoints returned `ok`, and `docker compose ps` showed the API, web, database, and broker as healthy with the worker running.
+The empty library preview is at <http://127.0.0.1:3000>. It has Spanish and English copy and makes unavailable features explicit. Stop containers with `docker compose down`; this retains the local database and broker volumes. Use `docker compose down --volumes` only when intentionally discarding all local data. The services use `restart: unless-stopped` so they return when Docker Desktop restarts, provided they were not explicitly stopped with Compose. The current Compose password default is for local development only. On 2026-11-21, `docker compose up --build -d` succeeded from new volumes, both health endpoints returned `ok`, and `docker compose ps` showed the API, web, database, and broker as healthy with the worker running.
+
+If Docker Desktop reports a healthy web container but its published port closes connections, run the built Next.js preview directly from `web/`:
+
+```powershell
+npm ci
+npm run build
+node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3011
+```
+
+Open <http://127.0.0.1:3011>. This direct preview served the library page and health route on 2026-11-21 after Docker Desktop's port 3000 stopped returning responses. Stop the direct server with Ctrl+C. The page currently makes no API calls; document operations require the later library slice.
 
 Compose uses these settings:
 

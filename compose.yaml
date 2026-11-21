@@ -2,6 +2,7 @@ name: farodocs
 
 services:
   db:
+    restart: unless-stopped
     image: pgvector/pgvector:0.8.7-pg17-trixie
     environment:
       POSTGRES_DB: farodocs
@@ -16,6 +17,7 @@ services:
       retries: 12
 
   broker:
+    restart: unless-stopped
     image: redis:7.4-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -27,6 +29,7 @@ services:
       retries: 12
 
   api:
+    restart: unless-stopped
     build: ./backend
     command: ["sh", "-c", "python -m farodocs.migrate && uvicorn farodocs.main:app --host 0.0.0.0 --port 8000"]
     environment:
@@ -46,6 +49,7 @@ services:
       retries: 12
 
   worker:
+    restart: unless-stopped
     build: ./backend
     command: ["celery", "-A", "farodocs.worker:celery_app", "worker", "--loglevel=INFO"]
     environment:
@@ -60,6 +64,7 @@ services:
         condition: service_healthy
 
   web:
+    restart: unless-stopped
     build: ./web
     environment:
       FARODOCS_API_URL: http://api:8000

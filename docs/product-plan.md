@@ -108,6 +108,6 @@ Main risks: misleading PDF reading order or coordinates; OCR errors; stale embed
 
 ## Current evidence
 
-- Implemented: OpenSpec planning structure, technical documents, a Compose/API/web/worker skeleton with health endpoints and a placeholder page, and the initial library schema. No document behavior exists yet.
-- Evaluated: Compose syntax, a clean five-service Compose startup, local API/web health endpoints, web build/lint/typecheck, Python package imports, a clean database migration, migration idempotency, and selected schema constraints. No corpus, document user flow, retrieval, security, or model evaluation has run.
+- Implemented: OpenSpec planning structure, technical documents, a Compose/API/web/worker skeleton with health endpoints, a bilingual empty library preview, and the initial library schema. No document behavior exists yet.
+- Evaluated: Compose syntax, a clean five-service Compose startup, local API/web health endpoints, web build/lint/typecheck, Python package imports, a clean database migration, migration idempotency, selected schema constraints, and the empty preview at desktop and mobile widths with its language switch. No corpus, document user flow, retrieval, security, or model evaluation has run.
 - Planned: every product capability and all numerical evaluation targets above.
