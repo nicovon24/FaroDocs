@@ -1,4 +1,4 @@
-name: Validate foundation
+name: Validate FaroDocs
 
 on:
   push:
@@ -55,13 +55,13 @@ jobs:
       - name: Check synthetic parser and upload fixtures
         run: |
           python -m pip install reportlab==4.4.4
-          PYTHONPATH=backend:backend/tests python -m unittest backend.tests.test_extraction backend.tests.test_uploads -v
+          PYTHONPATH=backend:backend/tests python -m unittest backend.tests.test_extraction backend.tests.test_uploads backend.tests.test_groq -v
       - run: python -m farodocs.migrate
       - run: python -m farodocs.migrate
-      - name: Check retry and passage stability against PostgreSQL
+      - name: Check processing and conversations against PostgreSQL
         env:
           PYTHONPATH: backend:backend/tests
-        run: python -m unittest backend.tests.test_processing -v
+        run: python -m unittest backend.tests.test_processing backend.tests.test_conversations -v
       - name: Check database constraints
         run: |
           python - <<'PY'
@@ -75,7 +75,7 @@ jobs:
                   cursor.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
                   assert cursor.fetchone()[0] == "0.8.7"
                   cursor.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public'")
-                  assert cursor.fetchone()[0] == 12
+                  assert cursor.fetchone()[0] == 15
           PY
 
   compose-config:
@@ -93,10 +93,10 @@ jobs:
           python-version: '3.13'
       - run: python -m pip install -e backend reportlab==4.4.4
       - run: docker compose up --build -d --wait
-      - name: Check synthetic uploads and processing through HTTP
+      - name: Check synthetic library and search through HTTP
         env:
           PYTHONPATH: backend:backend/tests
           FARODOCS_TEST_API_URL: http://127.0.0.1:8000
-        run: python -m unittest backend.tests.test_api_library -v
+        run: python -m unittest backend.tests.test_api_library backend.tests.test_api_search -v
       - if: always()
         run: docker compose down

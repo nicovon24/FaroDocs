@@ -12,9 +12,23 @@ type DocumentRow = {
 };
 type Version = { id: string; version_number: number; filename: string; status: DocumentRow["status"]; error_message: string | null; is_current: boolean; job_id: string | null; can_retry: boolean };
 type Passage = { id: string; ordinal: number; text_content: string; locator: Record<string, number | string> };
+type SearchResult = { passage_id: string; text_content: string; locator: Passage["locator"]; document_id: string; title: string; version_id: string; version_number: number; rank: number };
+type Citation = { source_number: number; passage_id: string; text_content: string; locator: Passage["locator"]; document_id: string; title: string; version_id: string; version_number: number };
+type Message = { id: string; role: "user" | "assistant"; content: string; model_id: string | null; citations: Citation[] };
+type Conversation = { id: string; title: string; message_count?: number; messages?: Message[] };
 
 const copy = {
   es: {
+    chatHeading: "Conversaciones", chatIntro: "Preguntá sobre tus documentos y revisá cada fuente antes de confiar en una respuesta.",
+    newChat: "Nueva conversación", noChats: "Todavía no hay conversaciones. Escribí una pregunta para empezar.", selectChat: "Elegí una conversación o escribí una nueva pregunta.",
+    groqKey: "Tu API key de Groq", groqKeyHelp: "La key se usa para esta sesión y no se guarda. Los pasajes recuperados se envían a Groq al preguntar.",
+    model: "Modelo", question: "Tu pregunta", ask: "Preguntar", answerPending: "Consultando a Groq…",
+    deleteChat: "Eliminar conversación", deleteChatConfirm: "¿Eliminar esta conversación y sus mensajes?",
+    sources: "Fuentes", noSource: "Sin fuentes citadas", chatError: "No se pudo completar la pregunta.", keyRequired: "Ingresá tu API key de Groq para preguntar.",
+    providerError: "Groq no pudo responder. Revisá la key, el modelo o los límites e intentá de nuevo.",
+    searchHeading: "Buscar en tus documentos", searchIntro: "Encontrá pasajes de las versiones actuales y abrí su fuente.",
+    searchInput: "Palabras para buscar", searchButton: "Buscar", searchPrompt: "Escribí una consulta para encontrar pasajes.",
+    noResults: "No encontramos pasajes para esa consulta.", searchLimit: "La búsqueda actual coincide por palabras; todavía no reconoce sinónimos.",
     local: "Vista local", library: "Biblioteca", search: "Búsqueda", chats: "Conversaciones", planned: "Próximamente",
     workspace: "Espacio personal", heading: "Tu biblioteca", intro: "Guardá documentos y volvé a cada pasaje con su fuente original.",
     upload: "Subir documentos", uploadHint: "PDF, DOCX, TXT o Markdown · Hasta 10 MiB · PDF de hasta 100 páginas",
@@ -30,10 +44,20 @@ const copy = {
     page: "Página", paragraph: "Bloque", offset: "Caracteres", source: "Ubicación de origen", passage: "Pasaje",
     connection: "No se pudo conectar con la API local. Revisá que Docker Compose esté iniciado.",
     uploadError: "No se pudo subir el archivo.", saveError: "No se pudieron guardar los cambios.",
-    localNote: "Desarrollo local para una persona. La búsqueda, el chat y las cuentas todavía no están disponibles.",
+    localNote: "Vista local para una persona, sin cuentas ni permisos compartidos.",
     fileRequired: "Elegí un archivo.", selectVersion: "Elegí una versión para inspeccionar sus pasajes.",
   },
   en: {
+    chatHeading: "Conversations", chatIntro: "Ask about your documents and inspect each source before trusting an answer.",
+    newChat: "New conversation", noChats: "No conversations yet. Write a question to start.", selectChat: "Select a conversation or write a new question.",
+    groqKey: "Your Groq API key", groqKeyHelp: "The key is used for this session and is not saved. Retrieved passages are sent to Groq when you ask.",
+    model: "Model", question: "Your question", ask: "Ask", answerPending: "Asking Groq…",
+    deleteChat: "Delete conversation", deleteChatConfirm: "Delete this conversation and its messages?",
+    sources: "Sources", noSource: "No cited sources", chatError: "Could not complete the question.", keyRequired: "Enter your Groq API key to ask.",
+    providerError: "Groq could not answer. Check the key, model, or limits and try again.",
+    searchHeading: "Search your documents", searchIntro: "Find passages in current versions and open their sources.",
+    searchInput: "Search words", searchButton: "Search", searchPrompt: "Enter a query to find passages.",
+    noResults: "No passages match that query.", searchLimit: "Current search matches words; it does not recognize synonyms yet.",
     local: "Local preview", library: "Library", search: "Search", chats: "Conversations", planned: "Coming later",
     workspace: "Personal space", heading: "Your library", intro: "Keep documents and return to each passage with its original source.",
     upload: "Upload documents", uploadHint: "PDF, DOCX, TXT or Markdown · Up to 10 MiB · PDFs up to 100 pages",
@@ -49,7 +73,7 @@ const copy = {
     page: "Page", paragraph: "Block", offset: "Characters", source: "Source location", passage: "Passage",
     connection: "Could not reach the local API. Check that Docker Compose is running.",
     uploadError: "Could not upload the file.", saveError: "Could not save changes.",
-    localNote: "Single-owner local development. Search, chat and accounts are not available yet.",
+    localNote: "Single-owner local preview without accounts or shared permissions.",
     fileRequired: "Choose a file.", selectVersion: "Choose a version to inspect its passages.",
   },
 } as const;
@@ -57,7 +81,8 @@ const copy = {
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/library${path}`, { ...init, cache: "no-store" });
   const type = response.headers.get("content-type") ?? "";
-  const result = type.includes("application/json") ? await response.json() : null;
+  const raw = await response.text();
+  const result = type.includes("application/json") && raw ? JSON.parse(raw) : null;
   if (!response.ok) throw new Error(result?.detail ?? `HTTP ${response.status}`);
   return result as T;
 }
@@ -78,8 +103,137 @@ function locatorLabel(locator: Passage["locator"], t: typeof copy[Language]) {
   return t.source;
 }
 
+function ChatView({ language, apiKey, setApiKey }: { language: Language; apiKey: string; setApiKey: (value: string) => void }) {
+  const t = copy[language];
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Conversation | null>(null);
+  const [question, setQuestion] = useState("");
+  const [model, setModel] = useState("openai/gpt-oss-20b");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const refreshList = useCallback(async () => setConversations(await api<Conversation[]>("/conversations")), []);
+  useEffect(() => { void api<Conversation[]>("/conversations").then(setConversations).catch(exc => setError(String(exc))); }, []);
+  useEffect(() => {
+    if (!selected) return;
+    void api<Conversation>(`/conversations/${selected}`).then(setDetail).catch(exc => setError(String(exc)));
+  }, [selected]);
+
+  async function newConversation() {
+    setBusy(true); setError("");
+    try {
+      const created = await api<Conversation>("/conversations", { method: "POST" });
+      await refreshList(); setSelected(created.id); setDetail({ ...created, messages: [] });
+    } catch (exc) { setError(exc instanceof Error ? exc.message : t.chatError); }
+    finally { setBusy(false); }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!question.trim()) return;
+    if (!apiKey.trim()) { setError(t.keyRequired); return; }
+    setBusy(true); setError("");
+    try {
+      let id = selected;
+      if (!id) {
+        const created = await api<Conversation>("/conversations", { method: "POST" });
+        id = created.id; setSelected(id);
+      }
+      const result = await api<Conversation>(`/conversations/${id}/messages`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ question: question.trim(), api_key: apiKey, model, language }),
+      });
+      setDetail(result); setQuestion(""); await refreshList();
+    } catch (exc) {
+      const message = exc instanceof Error ? exc.message : "";
+      setError(message.startsWith("Groq") ? t.providerError : message.includes("Groq API key") ? t.keyRequired : message || t.chatError);
+    }
+    finally { setBusy(false); }
+  }
+
+  async function removeConversation() {
+    if (!selected || !window.confirm(t.deleteChatConfirm)) return;
+    setBusy(true); setError("");
+    try {
+      await api(`/conversations/${selected}`, { method: "DELETE" });
+      const rows = await api<Conversation[]>("/conversations");
+      setConversations(rows); setSelected(rows[0]?.id ?? null); setDetail(null);
+    } catch (exc) { setError(exc instanceof Error ? exc.message : t.chatError); }
+    finally { setBusy(false); }
+  }
+
+  return <section className="chat-view" aria-label={t.chats}>
+    <div className="page-heading"><div><h1>{t.chatHeading}</h1><p>{t.chatIntro}</p></div></div>
+    <div className="chat-layout">
+      <aside className="chat-list" aria-label={t.chats}>
+        <button className="secondary-button" type="button" onClick={() => void newConversation()} disabled={busy}>{t.newChat}</button>
+        {conversations.map(item => <button type="button" className={`chat-list-item ${selected === item.id ? "active" : ""}`} key={item.id} onClick={() => setSelected(item.id)}>{item.message_count ? item.title : t.newChat}</button>)}
+      </aside>
+      <div className="chat-main">
+        <form className="chat-settings" onSubmit={e => e.preventDefault()}>
+          <label>{t.groqKey}<input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} autoComplete="off" spellCheck={false} placeholder="gsk_…" /></label>
+          <label>{t.model}<select value={model} onChange={e => setModel(e.target.value)}><option value="openai/gpt-oss-20b">GPT OSS 20B</option><option value="openai/gpt-oss-120b">GPT OSS 120B</option></select></label>
+          <p>{t.groqKeyHelp}</p>
+        </form>
+        {error && <div className="error-banner" role="alert">{error}</div>}
+        {detail?.messages?.length ? <div className="chat-messages" aria-live="polite">{detail.messages.map(message => <article className={`chat-message ${message.role}`} key={message.id}>
+          <p>{message.content}</p>
+          {message.model_id && <small>{message.model_id}</small>}
+          {message.citations.length > 0 && <div className="chat-citations"><strong>{t.sources}</strong>{message.citations.map(source => <div key={source.passage_id} className="chat-citation">
+            <span>[{source.source_number}] {source.title} · v{source.version_number} · {locatorLabel(source.locator, t)}</span>
+            <p>{source.text_content}</p>
+            <a href={`/api/library/documents/${source.document_id}/versions/${source.version_id}/original${source.locator.page ? `#page=${source.locator.page}` : ""}`} target="_blank" rel="noreferrer">{t.original}</a>
+          </div>)}</div>}
+        </article>)}</div> : <p className="search-empty">{conversations.length ? t.selectChat : t.noChats}</p>}
+        <form className="chat-composer" onSubmit={e => void submit(e)}>
+          <label>{t.question}<textarea value={question} maxLength={1000} rows={3} onChange={e => setQuestion(e.target.value)} required /></label>
+          <div><button className="primary-button" disabled={busy || !question.trim()}>{busy ? t.answerPending : t.ask}</button>
+            {selected && <button type="button" className="danger-button" disabled={busy} onClick={() => void removeConversation()}>{t.deleteChat}</button>}
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>;
+}
+
+function SearchView({ language }: { language: Language }) {
+  const t = copy[language];
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!query.trim()) { setResults(null); return; }
+    setLoading(true); setError("");
+    try { setResults(await api<SearchResult[]>(`/search?q=${encodeURIComponent(query.trim())}`)); }
+    catch (exc) { setError(exc instanceof Error ? exc.message : t.connection); }
+    finally { setLoading(false); }
+  }
+
+  return <section className="search-view" aria-label={t.search}>
+    <div className="page-heading"><div><h1>{t.searchHeading}</h1><p>{t.searchIntro}</p></div></div>
+    <form className="search-form" onSubmit={e => void submit(e)}>
+      <input aria-label={t.searchInput} placeholder={t.searchInput} value={query} maxLength={200} onChange={e => setQuery(e.target.value)} />
+      <button className="primary-button" disabled={loading || !query.trim()}>{loading ? t.pending : t.searchButton}</button>
+    </form>
+    <p className="search-limit">{t.searchLimit}</p>
+    {error && <div className="error-banner" role="alert">{error}</div>}
+    {results === null ? <p className="search-empty">{t.searchPrompt}</p> : results.length === 0 ? <p className="search-empty">{t.noResults}</p> :
+      <div className="search-results">{results.map(result => <article className="search-result" key={result.passage_id}>
+        <div className="search-result-heading"><h2>{result.title}</h2><span>v{result.version_number} · {locatorLabel(result.locator, t)}</span></div>
+        <p>{result.text_content}</p>
+        <a href={`/api/library/documents/${result.document_id}/versions/${result.version_id}/original${result.locator.page ? `#page=${result.locator.page}` : ""}`} target="_blank" rel="noreferrer">{t.original}</a>
+      </article>)}</div>}
+  </section>;
+}
+
 export default function Home() {
   const [language, setLanguage] = useState<Language>("es");
+  const [view, setView] = useState<"library" | "search" | "chats">("library");
+  const [groqKey, setGroqKey] = useState("");
   const t = copy[language];
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [folders, setFolders] = useState<Item[]>([]);
@@ -185,13 +339,14 @@ export default function Home() {
       <aside className="sidebar" aria-label={language === "es" ? "Navegación" : "Navigation"}>
         <p className="sidebar-label">{t.workspace}</p>
         <nav aria-label={language === "es" ? "Navegación" : "Navigation"}>
-          <span className="nav-item active" aria-current="page"><NavIcon kind="library" />{t.library}</span>
-          <span className="nav-item unavailable"><NavIcon kind="search" />{t.search}<small>{t.planned}</small></span>
-          <span className="nav-item unavailable"><NavIcon kind="chats" />{t.chats}<small>{t.planned}</small></span>
+          <button type="button" className={`nav-item ${view === "library" ? "active" : ""}`} aria-current={view === "library" ? "page" : undefined} onClick={() => setView("library")}><NavIcon kind="library" />{t.library}</button>
+          <button type="button" className={`nav-item ${view === "search" ? "active" : ""}`} aria-current={view === "search" ? "page" : undefined} onClick={() => setView("search")}><NavIcon kind="search" />{t.search}</button>
+          <button type="button" className={`nav-item ${view === "chats" ? "active" : ""}`} aria-current={view === "chats" ? "page" : undefined} onClick={() => setView("chats")}><NavIcon kind="chats" />{t.chats}</button>
         </nav>
         <p className="sidebar-footer">{t.localNote}</p>
       </aside>
       <main className="content">
+        {view === "search" ? <SearchView language={language} /> : view === "chats" ? <ChatView language={language} apiKey={groqKey} setApiKey={setGroqKey} /> : <>
         <div className="page-heading"><div><h1>{t.heading}</h1><p>{t.intro}</p></div>
           <label className="primary-button upload-button">{busy ? t.pending : t.upload}<input ref={uploadRef} type="file" accept=".pdf,.docx,.txt,.md" disabled={busy} onChange={e => void upload(e.target.files?.[0])} /></label>
         </div>
@@ -242,6 +397,7 @@ export default function Home() {
             </div>
           </div>
         </section>}
+        </>}
       </main>
     </div>
   </div>;

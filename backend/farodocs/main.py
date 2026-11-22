@@ -2,14 +2,24 @@
 
 import uuid
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from farodocs.library import OWNER_ID, WORKSPACE_ID, connection, dispatch, ensure_owner, storage_root
+from farodocs.search import search_passages
+from farodocs.conversations import router as conversation_router
 from farodocs.uploads import InvalidUpload, MAX_UPLOAD_BYTES, store_original, validate_upload
 
 app = FastAPI(title="FaroDocs API", version="0.1.0")
+app.include_router(conversation_router)
+
+
+@app.get("/search")
+def search(q: str = Query(min_length=1, max_length=200)) -> list[dict]:
+    if not q.strip():
+        raise HTTPException(422, "Search query must not be empty")
+    return search_passages(q.strip())
 
 
 def _document(db, document_id):
@@ -207,6 +217,14 @@ def delete_document(document_id: uuid.UUID) -> dict:
     job_id = uuid.uuid4()
     with connection() as db:
         _document(db, document_id)
+        db.execute(
+            "DELETE FROM conversations WHERE id IN ("
+            "SELECT DISTINCT m.conversation_id FROM conversation_citations cc "
+            "JOIN conversation_messages m ON m.id=cc.message_id "
+            "JOIN chunks c ON c.id=cc.passage_id "
+            "JOIN document_versions v ON v.id=c.version_id "
+            "WHERE v.document_id=%s)", (document_id,),
+        )
         version = db.execute("SELECT id FROM document_versions WHERE document_id=%s AND is_current", (document_id,)).fetchone()
         db.execute("UPDATE documents SET is_deleted=true,deleted_at=now() WHERE id=%s", (document_id,))
         db.execute(

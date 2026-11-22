@@ -4,7 +4,7 @@ Status: current local library preview. This describes the FaroDocs-specific UI i
 
 ## Mode and layout
 
-The library is an **Operate** surface. The owner should be able to scan document state, act on one document, and inspect a passage without leaving the work context. Desktop uses a narrow navigation rail, a main document area, an organization panel, and an inline detail region. At narrow widths these areas stack while controls remain keyboard reachable.
+The application is an **Operate** surface. The owner should be able to scan document state, search passages, ask a sourced question, and inspect a passage without losing the work context. Desktop uses a narrow navigation rail; library, search, and conversations share the same visual system. At narrow widths areas stack while controls remain keyboard reachable.
 
 ## Tokens
 
@@ -23,7 +23,7 @@ The type stack is Segoe UI, Inter, then Arial. Body copy is compact and readable
 
 ## Interaction rules
 
-- Keep primary upload visible near the library heading. Make unavailable search and conversations explicit.
+- Keep primary upload visible near the library heading. Search results show document version and locator; conversations separate the thread list, provider settings, messages, and citations.
 - Use inline document details and version tabs so the owner can compare prior versions.
 - Label source locators by page, body block, or character range. Link a PDF passage to its original page; do not imply pixel-accurate highlighting.
 - Show processing failures with a useful reason and a retry control.

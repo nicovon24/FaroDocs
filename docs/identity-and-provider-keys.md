@@ -1,6 +1,6 @@
 # Identity, chat history, and provider credentials
 
-Status: proposed design for a user-confirmed product requirement, 2026-11-21. No authentication, chat history, or credential storage has been implemented or evaluated.
+Status: proposed design for account identity and durable credentials. The local fixed-owner preview now stores conversations and messages and accepts a request-only Groq key. No authentication, account-scoped history, or credential storage has been implemented or evaluated.
 
 ## Sign-in boundary
 
