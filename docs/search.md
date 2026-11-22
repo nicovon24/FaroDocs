@@ -1,6 +1,6 @@
 # Local passage search
 
-Search uses PostgreSQL full-text matching with the `simple` dictionary. It covers extracted passages from ready current versions of visible local-owner documents. It returns at most 20 passages ordered by lexical rank, then stable passage ID. No vector embeddings or retrieval-quality results are claimed.
+Search uses PostgreSQL full-text matching with the `simple` dictionary. It covers extracted passages from ready current versions of visible local-owner documents. During a replacement upload, the last ready version remains current and searchable until a newer replacement succeeds; a failed replacement leaves it available. Search returns at most 20 passages ordered by lexical rank, then stable passage ID. No vector embeddings or retrieval-quality results are claimed.
 
 Run the Compose stack, then query:
 

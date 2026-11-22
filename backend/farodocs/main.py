@@ -53,12 +53,10 @@ async def _upload(file: UploadFile, document_id: uuid.UUID | None = None):
                 if existing is None:
                     raise HTTPException(404, "Document not found")
             prior = db.execute("SELECT coalesce(max(version_number),0) AS n FROM document_versions WHERE document_id=%s", (document_id,)).fetchone()
-            if replacing:
-                db.execute("UPDATE document_versions SET is_current=false WHERE document_id=%s", (document_id,))
-            else:
+            if not replacing:
                 db.execute("INSERT INTO documents (id, workspace_id, title) VALUES (%s,%s,%s)", (document_id, WORKSPACE_ID, filename))
             db.execute("INSERT INTO blobs (id, storage_key, sha256, size_bytes, media_type) VALUES (%s,%s,%s,%s,%s)", (blob_id, key, digest, len(data), media_type))
-            db.execute("INSERT INTO document_versions (id, document_id, version_number, blob_id, filename) VALUES (%s,%s,%s,%s,%s)", (version_id, document_id, prior["n"] + 1, blob_id, filename))
+            db.execute("INSERT INTO document_versions (id, document_id, version_number, blob_id, filename, is_current) VALUES (%s,%s,%s,%s,%s,%s)", (version_id, document_id, prior["n"] + 1, blob_id, filename, not replacing))
             db.execute("INSERT INTO processing_jobs (id, version_id, kind) VALUES (%s,%s,'extract')", (job_id, version_id))
     except Exception:
         (root / key).unlink(missing_ok=True)
@@ -216,7 +214,12 @@ def create_tag(item: NamedItem) -> dict:
 def delete_document(document_id: uuid.UUID) -> dict:
     job_id = uuid.uuid4()
     with connection() as db:
-        _document(db, document_id)
+        locked = db.execute(
+            "SELECT id FROM documents WHERE id=%s AND workspace_id=%s AND NOT is_deleted FOR UPDATE",
+            (document_id, WORKSPACE_ID),
+        ).fetchone()
+        if locked is None:
+            raise HTTPException(404, "Document not found")
         db.execute(
             "DELETE FROM conversations WHERE id IN ("
             "SELECT DISTINCT m.conversation_id FROM conversation_citations cc "

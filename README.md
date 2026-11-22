@@ -16,7 +16,7 @@ The preview targets one local development owner. Passage search and local conver
 | Evaluation results | Synthetic functional checks only; no retrieval or answer-quality metrics and no live Groq check |
 | Public deployment | None |
 
-Read the [product plan](docs/product-plan.md), [decision record](docs/decisions.md), [reference and CI analysis](docs/reference-and-delivery.md), [first vertical slice proposal](openspec/changes/farodocs-foundation/proposal.md), [foundation verification](docs/foundation-verification.md), and [search and conversation verification](docs/search-conversation-verification.md).
+Read the [product plan](docs/product-plan.md), [decision record](docs/decisions.md), [reference and CI analysis](docs/reference-and-delivery.md), [first vertical slice proposal](openspec/changes/farodocs-foundation/proposal.md), [foundation verification](docs/foundation-verification.md), [search and conversation verification](docs/search-conversation-verification.md), and [consistency fix verification](docs/consistency-verification.md).
 
 ## Running locally
 

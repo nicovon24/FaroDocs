@@ -61,7 +61,7 @@ jobs:
       - name: Check processing and conversations against PostgreSQL
         env:
           PYTHONPATH: backend:backend/tests
-        run: python -m unittest backend.tests.test_processing backend.tests.test_conversations -v
+        run: python -m unittest backend.tests.test_processing backend.tests.test_version_availability backend.tests.test_conversations -v
       - name: Check database constraints
         run: |
           python - <<'PY'

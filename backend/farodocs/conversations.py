@@ -126,20 +126,20 @@ def ask(conversation_id: uuid.UUID, request: Question) -> dict:
             citation_numbers = list(dict.fromkeys(numbers))
         model_id = request.model
     with connection() as db:
-        _conversation(db, conversation_id)
-        db.execute("SELECT id FROM conversations WHERE id=%s FOR UPDATE", (conversation_id,))
-        position = db.execute("SELECT coalesce(max(position),0) AS n FROM conversation_messages WHERE conversation_id=%s", (conversation_id,)).fetchone()["n"]
         if citation_numbers:
             ids = [sources[number - 1]["passage_id"] for number in citation_numbers]
             valid = db.execute(
                 "SELECT c.id FROM chunks c JOIN document_versions v ON v.id=c.version_id "
                 "JOIN documents d ON d.id=v.document_id "
                 "WHERE c.id=ANY(%s) AND d.workspace_id=%s AND NOT d.is_deleted "
-                "AND v.is_current AND v.status='ready' FOR SHARE OF d,v",
+                "AND v.is_current AND v.status='ready' ORDER BY d.id,v.id FOR SHARE OF d",
                 (ids, WORKSPACE_ID),
             ).fetchall()
             if len(valid) != len(ids):
                 raise HTTPException(409, "Sources changed while answering; ask again")
+        _conversation(db, conversation_id)
+        db.execute("SELECT id FROM conversations WHERE id=%s FOR UPDATE", (conversation_id,))
+        position = db.execute("SELECT coalesce(max(position),0) AS n FROM conversation_messages WHERE conversation_id=%s", (conversation_id,)).fetchone()["n"]
         user_id, assistant_id = uuid.uuid4(), uuid.uuid4()
         db.execute(
             "INSERT INTO conversation_messages (id,conversation_id,role,content,position) VALUES (%s,%s,'user',%s,%s)",

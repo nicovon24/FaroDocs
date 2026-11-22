@@ -2,6 +2,9 @@
 
 from hashlib import sha256
 import json
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+import time
 import unittest
 from unittest.mock import patch
 import uuid
@@ -11,7 +14,7 @@ from pydantic import SecretStr
 
 from farodocs.conversations import Question, ask, create_conversation, delete_conversation, get_conversation, list_conversations
 from farodocs.groq import GroqUnavailable
-from farodocs.library import WORKSPACE_ID, connection, ensure_owner
+from farodocs.library import WORKSPACE_ID, connection, ensure_owner, process_cleanup
 from farodocs.main import delete_document
 
 
@@ -77,6 +80,55 @@ class ConversationTest(unittest.TestCase):
         self.assertEqual(502, failure.exception.status_code)
         self.assertNotIn("private-key", str(failure.exception.detail))
         delete_conversation(self.conversation_id)
+        with self.assertRaises(HTTPException):
+            get_conversation(self.conversation_id)
+
+    def test_deletion_waits_for_in_flight_citation_and_cleanup_completes(self):
+        source_locked = Event()
+        release_answer = Event()
+
+        class PausedConnection:
+            def __init__(self):
+                self.inner = connection()
+
+            def __enter__(self):
+                self.inner.__enter__()
+                return self
+
+            def __exit__(self, *args):
+                return self.inner.__exit__(*args)
+
+            def execute(self, query, params=None):
+                result = self.inner.execute(query, params)
+                if "FOR SHARE OF d" in query:
+                    source_locked.set()
+                    if not release_answer.wait(10):
+                        raise TimeoutError("Synthetic answer pause timed out")
+                return result
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            try:
+                with patch("farodocs.conversations.connection", side_effect=PausedConnection), \
+                     patch("farodocs.conversations.generate_answer", return_value="The date is December first [1]."), \
+                     patch("farodocs.main.dispatch"):
+                    answering = executor.submit(ask, self.conversation_id, Question(question=self.token, api_key=SecretStr("fake")))
+                    self.assertTrue(source_locked.wait(10), "Answer did not lock its cited source")
+                    deleting = executor.submit(delete_document, self.document_id)
+                    time.sleep(0.2)
+                    self.assertFalse(deleting.done(), "Deletion did not wait for the cited source")
+                    release_answer.set()
+                    try:
+                        answering.result(timeout=10)
+                    except HTTPException as exc:
+                        self.assertEqual(404, exc.status_code)
+                    deleted = deleting.result(timeout=10)
+            finally:
+                release_answer.set()
+
+        process_cleanup(str(deleted["job_id"]))
+        with connection() as db:
+            job = db.execute("SELECT status FROM processing_jobs WHERE id=%s", (deleted["job_id"],)).fetchone()
+        self.assertEqual("ready", job["status"])
         with self.assertRaises(HTTPException):
             get_conversation(self.conversation_id)
 

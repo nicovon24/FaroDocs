@@ -68,7 +68,8 @@ def process_extraction(job_id: str) -> None:
             raise ValueError("No text was found; scanned files need the later OCR stage")
         with connection() as db:
             visible = db.execute(
-                "SELECT NOT d.is_deleted AS visible FROM document_versions v JOIN documents d ON d.id=v.document_id "
+                "SELECT NOT d.is_deleted AS visible, d.id AS document_id, v.version_number "
+                "FROM document_versions v JOIN documents d ON d.id=v.document_id "
                 "WHERE v.id=%s FOR UPDATE OF d", (version_id,),
             ).fetchone()
             if not visible or not visible["visible"]:
@@ -83,6 +84,13 @@ def process_extraction(job_id: str) -> None:
                      sha256(block.text.encode()).hexdigest(), json.dumps(block.locator)),
                 )
             db.execute("UPDATE document_versions SET status='ready', extraction_recipe=%s, error_code=NULL, error_message=NULL WHERE id=%s", (RECIPE, version_id))
+            current = db.execute(
+                "SELECT version_number FROM document_versions WHERE document_id=%s AND is_current",
+                (visible["document_id"],),
+            ).fetchone()
+            if current is None or visible["version_number"] > current["version_number"]:
+                db.execute("UPDATE document_versions SET is_current=false WHERE document_id=%s AND is_current", (visible["document_id"],))
+                db.execute("UPDATE document_versions SET is_current=true WHERE id=%s", (version_id,))
             db.execute("UPDATE processing_jobs SET status='ready', updated_at=now() WHERE id=%s", (job_id,))
     except Exception as exc:
         message = str(exc)[:500] or "Extraction failed"

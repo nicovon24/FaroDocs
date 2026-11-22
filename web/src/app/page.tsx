@@ -20,7 +20,7 @@ type Conversation = { id: string; title: string; message_count?: number; message
 const copy = {
   es: {
     chatHeading: "Conversaciones", chatIntro: "Preguntá sobre tus documentos y revisá cada fuente antes de confiar en una respuesta.",
-    newChat: "Nueva conversación", noChats: "Todavía no hay conversaciones. Escribí una pregunta para empezar.", selectChat: "Elegí una conversación o escribí una nueva pregunta.",
+    newChat: "Nueva conversación", noChats: "Todavía no hay conversaciones. Escribí una pregunta para empezar.", emptyChat: "Todavía no hay mensajes. Escribí una pregunta para empezar.", selectChat: "Elegí una conversación o escribí una nueva pregunta.",
     groqKey: "Tu API key de Groq", groqKeyHelp: "La key se usa para esta sesión y no se guarda. Los pasajes recuperados se envían a Groq al preguntar.",
     model: "Modelo", question: "Tu pregunta", ask: "Preguntar", answerPending: "Consultando a Groq…",
     deleteChat: "Eliminar conversación", deleteChatConfirm: "¿Eliminar esta conversación y sus mensajes?",
@@ -49,7 +49,7 @@ const copy = {
   },
   en: {
     chatHeading: "Conversations", chatIntro: "Ask about your documents and inspect each source before trusting an answer.",
-    newChat: "New conversation", noChats: "No conversations yet. Write a question to start.", selectChat: "Select a conversation or write a new question.",
+    newChat: "New conversation", noChats: "No conversations yet. Write a question to start.", emptyChat: "No messages yet. Write a question to start.", selectChat: "Select a conversation or write a new question.",
     groqKey: "Your Groq API key", groqKeyHelp: "The key is used for this session and is not saved. Retrieved passages are sent to Groq when you ask.",
     model: "Model", question: "Your question", ask: "Ask", answerPending: "Asking Groq…",
     deleteChat: "Delete conversation", deleteChatConfirm: "Delete this conversation and its messages?",
@@ -112,12 +112,17 @@ function ChatView({ language, apiKey, setApiKey }: { language: Language; apiKey:
   const [model, setModel] = useState("openai/gpt-oss-20b");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const visibleDetail = detail?.id === selected ? detail : null;
 
   const refreshList = useCallback(async () => setConversations(await api<Conversation[]>("/conversations")), []);
   useEffect(() => { void api<Conversation[]>("/conversations").then(setConversations).catch(exc => setError(String(exc))); }, []);
   useEffect(() => {
     if (!selected) return;
-    void api<Conversation>(`/conversations/${selected}`).then(setDetail).catch(exc => setError(String(exc)));
+    let active = true;
+    void api<Conversation>(`/conversations/${selected}`)
+      .then(result => { if (active) setDetail(result); })
+      .catch(exc => { if (active) setError(String(exc)); });
+    return () => { active = false; };
   }, [selected]);
 
   async function newConversation() {
@@ -168,7 +173,7 @@ function ChatView({ language, apiKey, setApiKey }: { language: Language; apiKey:
     <div className="chat-layout">
       <aside className="chat-list" aria-label={t.chats}>
         <button className="secondary-button" type="button" onClick={() => void newConversation()} disabled={busy}>{t.newChat}</button>
-        {conversations.map(item => <button type="button" className={`chat-list-item ${selected === item.id ? "active" : ""}`} key={item.id} onClick={() => setSelected(item.id)}>{item.message_count ? item.title : t.newChat}</button>)}
+        {conversations.map(item => <button type="button" className={`chat-list-item ${selected === item.id ? "active" : ""}`} key={item.id} disabled={busy} onClick={() => { if (selected !== item.id) { setDetail(null); setSelected(item.id); } }}>{item.message_count ? item.title : t.newChat}</button>)}
       </aside>
       <div className="chat-main">
         <form className="chat-settings" onSubmit={e => e.preventDefault()}>
@@ -177,7 +182,7 @@ function ChatView({ language, apiKey, setApiKey }: { language: Language; apiKey:
           <p>{t.groqKeyHelp}</p>
         </form>
         {error && <div className="error-banner" role="alert">{error}</div>}
-        {detail?.messages?.length ? <div className="chat-messages" aria-live="polite">{detail.messages.map(message => <article className={`chat-message ${message.role}`} key={message.id}>
+        {visibleDetail?.messages?.length ? <div className="chat-messages" aria-live="polite">{visibleDetail.messages.map(message => <article className={`chat-message ${message.role}`} key={message.id}>
           <p>{message.content}</p>
           {message.model_id && <small>{message.model_id}</small>}
           {message.citations.length > 0 && <div className="chat-citations"><strong>{t.sources}</strong>{message.citations.map(source => <div key={source.passage_id} className="chat-citation">
@@ -185,7 +190,7 @@ function ChatView({ language, apiKey, setApiKey }: { language: Language; apiKey:
             <p>{source.text_content}</p>
             <a href={`/api/library/documents/${source.document_id}/versions/${source.version_id}/original${source.locator.page ? `#page=${source.locator.page}` : ""}`} target="_blank" rel="noreferrer">{t.original}</a>
           </div>)}</div>}
-        </article>)}</div> : <p className="search-empty">{conversations.length ? t.selectChat : t.noChats}</p>}
+        </article>)}</div> : <p className="search-empty">{selected ? visibleDetail ? t.emptyChat : t.loading : conversations.length ? t.selectChat : t.noChats}</p>}
         <form className="chat-composer" onSubmit={e => void submit(e)}>
           <label>{t.question}<textarea value={question} maxLength={1000} rows={3} onChange={e => setQuestion(e.target.value)} required /></label>
           <div><button className="primary-button" disabled={busy || !question.trim()}>{busy ? t.answerPending : t.ask}</button>
@@ -280,10 +285,11 @@ export default function Home() {
   useEffect(() => { document.documentElement.lang = language; }, [language]);
   useEffect(() => { const timer = window.setTimeout(() => { void refresh(); }, 0); return () => window.clearTimeout(timer); }, [refresh]);
   useEffect(() => {
-    if (!documents.some(d => d.status === "queued" || d.status === "processing")) return;
+    if (!documents.some(d => d.status === "queued" || d.status === "processing") &&
+        !versions.some(v => v.status === "queued" || v.status === "processing")) return;
     const timer = window.setInterval(() => { void refresh(); if (selected) void loadDetail(selected, versionId ?? undefined); }, 2000);
     return () => window.clearInterval(timer);
-  }, [documents, refresh, selected, versionId, loadDetail]);
+  }, [documents, versions, refresh, selected, versionId, loadDetail]);
 
   const current = documents.find(d => d.id === selected);
   const visiblePassage = passages.find(p => p.id === activePassage);
